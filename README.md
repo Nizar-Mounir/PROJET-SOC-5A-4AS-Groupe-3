@@ -30,10 +30,6 @@ Ce dépôt Git contient l’ensemble des artefacts du **BUILD** (et une partie d
 │   ├── matrices/
 │   ├── run_feedback/
 │   └── README.md
-├── livrables/
-│   ├── rapport_build/
-│   ├── notifications_client/
-│   └── rapports_investigation_exemples/
 ├── .gitignore
 └── README.md   ← ce fichier
 
