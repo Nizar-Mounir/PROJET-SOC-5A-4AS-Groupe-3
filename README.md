@@ -1,6 +1,6 @@
 # PROJET-SOC-5A-4AS-Groupe-3
 
-Ce dépôt Git contient l’ensemble des artefacts du **BUILD** (et une partie du RUN) :
+Ce dépôt Git contient l’ensemble des artefacts du BUILD (et une partie du RUN) :
 - Règles de détection (Splunk / pseudo-Sigma)
 - Outillage et automatisation (n8n, scripts)
 - Procédures et documentation (workflows, fiches réflexes, matrices)
