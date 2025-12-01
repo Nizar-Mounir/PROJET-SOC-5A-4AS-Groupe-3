@@ -57,9 +57,9 @@ Ce sous-dossier contient les **exports JSON des workflows n8n**.
 Exemples :
 
 ```text
-workflow_notification_client.json
-workflow_ticket_IRIS.json
-workflow_enrichissement_whois.json
+workflow_notification_iris+_enrichissement.json
+
+workflow_enrichissement_.json
 ```
 
 Pour chaque workflow JSON, il est recommandé d’ajouter un fichier `.md` associé :

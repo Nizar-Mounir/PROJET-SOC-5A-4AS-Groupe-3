@@ -25,9 +25,7 @@ Récupère le JSON brut envoyé par Splunk (body et result).
   - Hash : `file_hash`, `md5`, `sha256`
 - Corrige l’URL Splunk dans `results_link`
 - Calcule la sévérité :
-  - base = 3
-  - +1 si le titre contient `password`
-  - +2 si le titre contient `execve`
+  -map avec le nom des alertes 
 - Construit un JSON propre pour IRIS
 
 ### 3. Création d’alerte DFIR-IRIS
