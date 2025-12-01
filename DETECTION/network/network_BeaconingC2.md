@@ -29,26 +29,26 @@ index=kunai
 | stats count AS req_per_min BY data.socket.src_ip, data.socket.dst_ip, _time
 | stats avg(req_per_min) AS avg stdev(req_per_min) AS sd BY data.socket.src_ip, data.socket.dst_ip
 | where avg > 3 AND sd < 1
-
-##Faux positifs possibles
+```
+## Faux positifs possibles
 
 - Agents EDR/antivirus communiquant régulièrement avec leur serveur de cloud.
 - Outils de supervision réseau ou probes de disponibilité.
 - Applications cloud effectuant des synchronisations régulières (OneDrive, Teams, Dropbox).
 - Health-checks automatisés de load balancers.
 
-##Mécanismes d’exclusion
+## Mécanismes d’exclusion
 
 - Ajouter en liste blanche les destinations légitimes des EDR et solutions de monitoring.
 - Filtrer les domaines officiels des éditeurs d’antivirus/cloud.
 - Exclure les serveurs internes dont le comportement réseau périodique est documenté.
 - Vérifier la correspondance entre l’agent applicatif et le port utilisé.
 
-##Sévérité recommandée
+## Sévérité recommandée
 
 - Critique, car un beaconing est généralement un indicateur fort de compromission active.
 
-##Pivots d’investigation
+## Pivots d’investigation
 
 - IP source (data.socket.src_ip)
 - Destination contactée (data.socket.dst_ip)
@@ -57,14 +57,14 @@ index=kunai
 - Historique complet des communications de l’hôte
 - Vérification de persistences sur l’hôte (services, tâches planifiées)
 
-##Actions d’endiguement
+## Actions d’endiguement
 
 - Isoler immédiatement la machine source si la communication n’est pas légitime.
 - Bloquer la destination au niveau firewall ou proxy.
 - Interrompre toute communication sortante vers l’adresse distante identifiée.
 - Surveiller les machines du même segment réseau pour identifier un éventuel cluster de compromission.
 
-##Remédiations
+## Remédiations
 
 - Supprimer l’implant ou le processus malveillant identifié.
 - Rechercher et éliminer les mécanismes de persistance associés.
@@ -73,7 +73,7 @@ index=kunai
 - Restreindre et contrôler plus finement les flux sortants.
 - Mettre en place des règles complémentaires de détection sur les comportements réguliers anormaux.
 
-##Références MITRE ATT&CK
+## Références MITRE ATT&CK
 
 - T1071 – Application Layer Protocol
 - T1071.001 – Web Protocols
