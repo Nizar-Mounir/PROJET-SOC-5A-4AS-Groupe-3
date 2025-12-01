@@ -1,10 +1,10 @@
 # Dossier `automation/` – Automatisations Splunk, n8n, scripts
 
-Ce dossier regroupe tout l’outillage technique utilisé pour automatiser le SOC :  
+Ce dossier regroupe tout l’outillage technique utilisé pour automatiser le SOC :
 
-- Alertes Splunk  
-- Workflows n8n  
-- Scripts (Python/Bash, etc.)  
+- Alertes Splunk
+- Workflows n8n
+- Scripts (Python/Bash, etc.)
 
 ---
 
@@ -23,9 +23,9 @@ automation/
 
 Ce sous-dossier contient :
 
-- `savedsearches.conf` → définition des alertes Splunk  
-- Fichiers de configuration Splunk annexes (`props.conf`, `transforms.conf`, etc.) si nécessaires  
-- Dashboards XML (tableaux de bord d’investigation / de monitoring)  
+- `savedsearches.conf` → définition des alertes Splunk
+- Fichiers de configuration Splunk annexes (`props.conf`, `transforms.conf`, etc.) si nécessaires
+- Dashboards XML (tableaux de bord d’investigation / de monitoring)
 
 Convention de nommage recommandée :
 
@@ -42,7 +42,7 @@ beaconing_cnc_splunk.conf
 ```
 
 Objectif :  
-Ce sous-dossier doit être **directement déployable** dans une app Splunk, par exemple :  
+Ce sous-dossier doit être **directement déployable** dans une app Splunk, par exemple :
 
 ```text
 $SPLUNK_HOME/etc/apps/insa_soc/local/
@@ -70,16 +70,16 @@ workflow_notification_client.md
 
 Ce fichier `.md` doit décrire :
 
-- Le **déclencheur** (webhook, alerte Splunk, cron…)  
-- Les **étapes principales** du workflow  
-- Les **données d’entrée/sortie**  
-- Le **canal de sortie** (Teams, email, ticketing, etc.)  
+- Le **déclencheur** (webhook, alerte Splunk, cron…)
+- Les **étapes principales** du workflow
+- Les **données d’entrée/sortie**
+- Le **canal de sortie** (Teams, email, ticketing, etc.)
 
 ---
 
 ## `scripts/` – Scripts auxiliaires
 
-Scripts utilisés par Splunk, n8n ou les analystes.  
+Scripts utilisés par Splunk, n8n ou les analystes.
 
 Exemples :
 
@@ -91,8 +91,8 @@ ioc_extractor.py
 
 Bonnes pratiques :
 
-- Documenter rapidement l’usage de chaque script en en-tête.  
-- Ne jamais stocker de secrets, mots de passe ou tokens directement dans les scripts.  
+- Documenter rapidement l’usage de chaque script en en-tête.
+- Ne jamais stocker de secrets, mots de passe ou tokens directement dans les scripts.
 
 ---
 
@@ -114,6 +114,6 @@ script_enrich_hash.py
 
 ## Bonnes pratiques
 
-- Vérifier systématiquement la **validité syntaxique** des fichiers Splunk (`btool` si nécessaire).  
-- Tester chaque workflow n8n dans l’instance de test avant de l’utiliser pour le client.  
-- Centraliser ici **tout ce qui automatise** les actions SOC (remontée d’alertes, notifications, enrichissement, ticketing…).  
+- Vérifier systématiquement la **validité syntaxique** des fichiers Splunk (`btool` si nécessaire).
+- Tester chaque workflow n8n dans l’instance de test avant de l’utiliser pour le client.
+- Centraliser ici **tout ce qui automatise** les actions SOC (remontée d’alertes, notifications, enrichissement, ticketing…).

@@ -1,0 +1,13 @@
+{
+  "event": {
+    "EventCode": "4769",
+    "Status": "0x0",
+    "TicketEncryptionType": "0x17",
+    "ServiceName": "sqlservice",
+    "TargetUserName": "sqlservice_account",
+    "source": "WinEventLog:Security",
+    "host": "test-dc01",
+    "test_id": "test_kerberoasting_01",
+    "rule_name": "Kerberoasting Activity - Initial Query"
+  }
+}

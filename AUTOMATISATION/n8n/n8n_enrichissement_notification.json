@@ -1,0 +1,502 @@
+{
+  "name": "Notification DFIR + Teams (enrichissement)",
+  "nodes": [
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "httpMethod": ["POST"],
+        "path": "alert",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-96, -48],
+      "id": "5617916a-3584-41b5-a047-a8b9abea62f9",
+      "name": "Webhook",
+      "webhookId": "aadb295b-4e84-4c21-9614-b794faf77853"
+    },
+    {
+      "parameters": {
+        "preBuiltAgentsCalloutHttpRequest": "",
+        "httpVariantWarning": "",
+        "curlImport": "",
+        "method": "POST",
+        "": "",
+        "url": "https://iris-nginx/alerts/add",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "dfirIrisApi",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "alert_title",
+              "value": "={{ $json.alert_title }}"
+            },
+            {
+              "name": "alert_description",
+              "value": "={{ $json.alert_description }}"
+            },
+            {
+              "name": "=alert_source",
+              "value": "={{ $json.alert_source }}"
+            },
+            {
+              "name": "alert_source_ref",
+              "value": "={{ $json.alert_source_ref }}"
+            },
+            {
+              "name": "alert_severity_id",
+              "value": "=2"
+            },
+            {
+              "name": "alert_status_id",
+              "value": "2"
+            },
+            {
+              "name": "alert_source_event_time",
+              "value": "={{ $json.alert_source_event_time }}"
+            },
+            {
+              "name": "alert_customer_id",
+              "value": "1"
+            },
+            {
+              "name": "alert_source_content",
+              "value": "={{ $json.alert_source_content }}"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        },
+        "infoMessage": ""
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [352, 160],
+      "id": "93222ef8-c4a5-43fa-bed1-622c7b7fcfe1",
+      "name": "DFIR-IRIS HTTP Request",
+      "extendsCredential": "dfirIrisApi",
+      "credentials": {
+        "dfirIrisApi": {
+          "id": "Z8TDwM0jBwst3Gg3",
+          "name": "DFIR-IRIS account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "from datetime import datetime\n\n# Loop over all input items from Splunk\nfor item in _input.all():\n    raw_body = item.json.get(\"body\", {})\n    result = raw_body.get(\"result\", {})\n\n    # --- GESTION DU TEMPS (NOUVEAU) ---\n    # Convertit le timestamp Unix Splunk (_time) en format ISO 8601 lisible\n    splunk_time = result.get(\"_time\")\n    if not splunk_time: splunk_time = result.get(\"info.utc_time\")\n    event_time_iso = datetime.utcnow().isoformat() # Fallback: Maintenant\n    \n    if splunk_time:\n        try:\n            event_time_iso = datetime.utcfromtimestamp(float(splunk_time)).isoformat()\n        except:\n            pass\n    # ----------------------------------\n\n    results_link = raw_body.get(\"results_link\", \"\").replace(\"53084d97834d:8000\", \"100.101.252.55:8000\")\n    alert_title = raw_body.get(\"search_name\", \"Splunk Alert\")\n    \n    # Sévérité\n    alert_severity_id = 3\n    if \"password\" in alert_title.lower(): alert_severity_id = 4\n    elif \"execve\" in alert_title.lower(): alert_severity_id = 5\n\n    # Extraction IOCs\n    target_ip = None\n    for ip_field in [\"dest_ip\", \"src_ip\", \"dvc_ip\"]:\n        val = result.get(ip_field)\n        if val and str(val).lower() not in [\"none\", \"null\", \"unknown\", \"\", \"127.0.0.1\", \"0.0.0.0\"]:\n            target_ip = val\n            break\n            \n    target_hash = None\n    for hash_field in [\"file_hash\", \"md5\", \"sha256\"]:\n        val = result.get(hash_field)\n        if val and str(val).lower() not in [\"none\", \"null\", \"unknown\", \"\"]:\n            target_hash = val\n            break\n\n    # JSON Final\n    item.json = {\n        \"alert_title\": alert_title,\n        \"alert_description\": f\"Alerte Splunk : {alert_title}\\nService suspect: {result.get('service_name','')}\",\n        \"alert_source\": f\"{result.get('host', 'unknown')}\",\n        \"alert_source_ref\": results_link,\n        \"alert_severity_id\": alert_severity_id,\n        \"alert_status_id\": 2,\n        \"alert_source_event_time\": event_time_iso,  # <-- On utilise la date convertie ici\n        \"alert_customer_id\": 1,\n        \"alert_source_content\": result.get(\"_raw\", str(result)),\n        \"target_ip\": target_ip,\n        \"target_hash\": target_hash\n    }\n\nreturn _input.all()\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [128, -48],
+      "id": "2e6b302f-0e35-4f55-b747-84e1c2d662b5",
+      "name": "Code in Python (Beta)"
+    },
+    {
+      "parameters": {
+        "url": "https://api.abuseipdb.com/api/v2/check",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Key",
+              "value": "cf9b6486cc296e552b243f681f362640099af9440a45c590bb3652277b8ac96d95a74bcb7fa3f6de"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "ipAddress",
+              "value": "={{ $json.target_ip }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [576, -336],
+      "id": "018b871f-86e0-44a5-81fe-6f6fd2082c43",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "preBuiltAgentsCalloutHttpRequest": "",
+        "httpVariantWarning": "",
+        "curlImport": "",
+        "method": "GET",
+        "": "",
+        "url": "=https://www.virustotal.com/api/v3/files/{{ $json.target_hash }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "virusTotalApi",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": false,
+        "options": {},
+        "infoMessage": ""
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [592, -144],
+      "id": "c3525847-470c-4419-87b0-e8cc61f3706f",
+      "name": "VirusTotal HTTP Request",
+      "extendsCredential": "virusTotalApi",
+      "credentials": {
+        "virusTotalApi": {
+          "id": "wXyNWwxw3vIi3DjQ",
+          "name": "VirusTotal account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a01b3420-3857-4fdc-b248-e626fa00b888",
+              "leftValue": "={{ $json.target_ip }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [352, -320],
+      "id": "d6207358-4ae9-43ff-99e7-e1817030394e",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "97bb1a3d-3370-4a44-9b28-03c517fea353",
+              "leftValue": "={{ $json.target_hash }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [352, -128],
+      "id": "a8f32784-7ff4-40ad-8f5f-d5b5d975f087",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [864, -96],
+      "id": "462870aa-9969-4e8b-b3ca-b66c88f9ece3",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ab735b6d-eb57-499f-ab38-a4a90edd8807",
+              "leftValue": "={{ $json.alert_severity_id }}",
+              "rightValue": 2,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1440, -176],
+      "id": "ab3e7802-801a-4a61-99b3-b08b2fdbb37e",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4dc54a84-5499-4f63-92ba-308f26a6a45a",
+              "name": "malicious-virustotal",
+              "value": "={{ $json.data.attributes.total_votes.malicious }}",
+              "type": "string"
+            },
+            {
+              "id": "07efc870-c48b-43fd-a63e-cb2dda0f2309",
+              "name": "harmless-virustotal",
+              "value": "={{ $json.data.attributes.total_votes.harmless }}",
+              "type": "string"
+            },
+            {
+              "id": "4b8816f2-bff8-43e4-9500-7a89c10261ee",
+              "name": "alert_title",
+              "value": "={{ $json.alert_title }}",
+              "type": "string"
+            },
+            {
+              "id": "9bfc5704-7241-4727-a5d9-791a8914415a",
+              "name": "alert_source",
+              "value": "={{ $json.alert_source }}",
+              "type": "string"
+            },
+            {
+              "id": "59ed4ac7-e2ab-4459-96d4-b9ab7b784fc7",
+              "name": "ref",
+              "value": "={{ $json.alert_source_ref }}",
+              "type": "string"
+            },
+            {
+              "id": "c117747b-76e5-401d-8cba-7a722d10dadc",
+              "name": "alert_severity_id",
+              "value": "={{ $json.alert_severity_id }}",
+              "type": "number"
+            },
+            {
+              "id": "80cfaa21-ffe3-4f36-8c9c-2247786ec71e",
+              "name": "alert_source_event_time",
+              "value": "={{ $json.alert_source_event_time }}",
+              "type": "string"
+            },
+            {
+              "id": "f39b9211-2e33-41a4-a9ce-3a980b0489b9",
+              "name": "client",
+              "value": "={{ $json.alert_customer_id }}",
+              "type": "string"
+            },
+            {
+              "id": "88bfd38c-f533-4707-b1e7-451e21aa7bcd",
+              "name": "abuseip score",
+              "value": "={{ $json.data.abuseConfidenceScore }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1280, -80],
+      "id": "7bc48d77-7e64-47c3-a9f8-2ce16cd4dffa",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// JavaScript (plus simple pour manipuler les objets ici)\nlet finalJson = {};\n\n// On boucle sur tous les items reçus (1, 2 ou 3)\nfor (const item of $input.all()) {\n    // On fusionne les clés. Si doublon, le dernier gagne.\n    // Assure-toi que tes branches n'ont pas les mêmes noms de clés pour des données différentes !\n    Object.assign(finalJson, item.json);\n}\n\n// On renvoie un seul item unique\nreturn [{json: finalJson}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1072, -80],
+      "id": "aaa9bd24-c231-41a9-9d7a-30ed5f93591b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://insacentre.webhook.office.com/webhookb2/017b80f6-3025-4c9a-a987-c4ebdb35521c@f7421450-df16-4714-ada1-395390cb91d3/IncomingWebhook/975089b01dd540818086ca355f65c631/61843f7a-c80d-4243-99b1-e81c54f7829b/V2HF7eCsLTSqOaZK46pCE-xPh6F0jdz8t2yIQ7oS0pnrI1",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"@type\": \"MessageCard\",\n  \"@context\": \"http://schema.org/extensions\",\n  \"themeColor\": \"{{ $json.alert_severity_id == 5 ? 'FF0000' : ($json.alert_severity_id == 4 ? 'FFA500' : '0076D7') }}\",\n  \"summary\": \"Alerte SOC\",\n  \"sections\": [{\n    \"activityTitle\": \"🚨 Alerte SOC : {{ $json.alert_title }}\",\n    \"activitySubtitle\": \"Source: {{ $json.alert_source }}\",\n    \"activityImage\": \"https://img.icons8.com/color/48/000000/alarm.png\",\n    \"facts\": [\n      {\n        \"name\": \"📅 Date\",\n        \"value\": \"{{ $json.alert_source_event_time }}\"\n      },\n      {\n        \"name\": \"🛡️ Sévérité ID\",\n        \"value\": \"{{ $json.alert_severity_id }}\"\n      },\n      {\n        \"name\": \"🚫 AbuseIPDB Score\",\n        \"value\": \"{{ $json['abuseip score'] ? $json['abuseip score'] + '%' : 'N/A' }}\"\n      },\n      {\n        \"name\": \"🦠 VirusTotal Malicious\",\n        \"value\": \"{{ $json['malicious-virustotal'] ? $json['malicious-virustotal'] : '0' }}\"\n      }\n    ],\n    \"markdown\": true\n  }],\n  \"potentialAction\": [{\n    \"@type\": \"OpenUri\",\n    \"name\": \"Voir dans Splunk\",\n    \"targets\": [{\n      \"os\": \"default\",\n      \"uri\": \"{{ $json.ref }}\"\n    }]\n  }]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [1648, -272],
+      "id": "84d47946-7a8a-4060-af03-c1852ff99e6b",
+      "name": "HTTP Request1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in Python (Beta)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in Python (Beta)": {
+      "main": [
+        [
+          {
+            "node": "DFIR-IRIS HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "VirusTotal HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VirusTotal HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e2235c26-6687-4600-b62c-fc7cc5c28996",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "515868e636a691e96026934c5a1f44ca0ff9e4615609ee294de4a6ee5d27ee0b"
+  },
+  "id": "IBN4Vz3HeROXF3OK",
+  "tags": []
+}
