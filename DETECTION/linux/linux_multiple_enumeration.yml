@@ -1,0 +1,31 @@
+title: Linux - Multiple Enumeration Commands
+id: LNX-RECON-0001
+status: production
+description: Detects multiple system enumeration commands executed by the same user in a short time window.
+logsource:
+  product: linux
+  service: kunai
+
+detection:
+  selection:
+    command:
+      - "whoami"
+      - "id"
+      - "hostname"
+      - "uname"
+      - "ifconfig"
+      - "ip addr show"
+      - "ip -4 addr show"
+      - "netstat"
+      - "ss"
+  timeframe: 5m
+  condition: selection | count() > 5
+
+falsepositives:
+  - Scripts d’audit légitimes
+  - Administrateurs exécutant un diagnostic
+
+level: medium
+tags:
+  - attack.discovery
+  - attack.t1082
